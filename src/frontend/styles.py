@@ -594,6 +594,41 @@ def apply_global_styles():
         }
 
 
+        /* Logout button styling */
+.st-key-logout_button button {
+    background-color: #B91C1C !important;
+    color: #FFFFFF !important;
+    border: 1px solid #B91C1C !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+}
+
+.st-key-logout_button button:hover {
+    background-color: #991B1B !important;
+    color: #FFFFFF !important;
+    border-color: #991B1B !important;
+}
+
+.st-key-logout_button button p {
+    color: #FFFFFF !important;
+}
+
+
+/* Compact API connection status */
+.connection-status {
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    min-height: auto !important;
+}
+
+.connection-status .status-dot {
+    width: 7px !important;
+    height: 7px !important;
+}
+
+
 
 
         </style>

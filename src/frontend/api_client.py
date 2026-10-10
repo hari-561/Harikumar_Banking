@@ -3,6 +3,7 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
+import streamlit as st
 
 
 # Load .env from the project root
@@ -43,14 +44,22 @@ def api_request(
 
     url = f"{API_BASE_URL}/{endpoint.lstrip('/')}"
 
+    headers = {}
+
+    access_token = st.session_state.get("access_token")
+
+    if access_token:
+        headers["Authorization"] = f"Bearer {access_token}"
+
     try:
         response = requests.request(
-            method=method,
-            url=url,
-            params=params,
-            json=json_data,
-            timeout=timeout
-        )
+    method=method,
+    url=url,
+    params=params,
+    json=json_data,
+    headers=headers,
+    timeout=timeout
+)
 
         response.raise_for_status()
 
@@ -246,15 +255,24 @@ def export_customers_csv(
     # the existing api_request() function.
     # Replace this fallback if your API client
     # uses a different configuration.
-    base_url = "http://127.0.0.1:8000"
+    base_url = API_BASE_URL
 
     try:
+        access_token = st.session_state.get("access_token")
+
+        headers = {
+            "Accept": "text/csv"
+        }
+
+        if access_token:
+            headers["Authorization"] = f"Bearer {access_token}"
+
         response = requests.get(
             f"{base_url}/export/customers",
             params=params,
             timeout=120,
-            headers={"Accept": "text/csv"},
-        )
+            headers=headers,
+)
 
         response.raise_for_status()
 

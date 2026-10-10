@@ -38,6 +38,10 @@ from src.api.services.customer_crud_service import (
     delete_customer
 )
 
+from fastapi import Depends
+
+from src.api.security.rbac import require_roles
+
 
 
 router = APIRouter(
@@ -50,7 +54,10 @@ router = APIRouter(
 
 @router.get(
     "",
-    response_model=CustomerListResponse
+    response_model=CustomerListResponse,
+    dependencies=[
+        Depends(require_roles("ADMIN", "ANALYST", "VIEWER"))
+    ]
 )
 def list_customers(
 
@@ -122,7 +129,10 @@ sort_order: Literal[
 
 @router.get(
     "/{customer_id}",
-    response_model=CustomerDetailResponse
+    response_model=CustomerDetailResponse,
+    dependencies=[
+        Depends(require_roles("ADMIN", "ANALYST", "VIEWER"))
+    ]
 )
 def customer_detail(
     customer_id: int = Path(
@@ -147,7 +157,10 @@ def customer_detail(
 
 @router.get(
     "/{customer_id}/activity",
-    response_model=CustomerActivityResponse
+    response_model=CustomerActivityResponse,
+    dependencies=[
+        Depends(require_roles("ADMIN", "ANALYST", "VIEWER"))
+    ]
 )
 def customer_activity(
     customer_id: int = Path(..., ge=1)
@@ -168,7 +181,10 @@ def customer_activity(
 
 @router.get(
     "/{customer_id}/risk",
-    response_model=CustomerRiskResponse
+    response_model=CustomerRiskResponse,
+    dependencies=[
+        Depends(require_roles("ADMIN", "ANALYST", "VIEWER"))
+    ]
 )
 def customer_risk(
     customer_id: int = Path(..., ge=1)
@@ -190,7 +206,10 @@ def customer_risk(
 @router.post(
     "",
     response_model=CustomerMutationResponse,
-    status_code=201
+    status_code=201,
+    dependencies=[
+        Depends(require_roles("ADMIN"))
+    ]
 )
 def create_new_customer(
     request: CustomerCreateRequest
@@ -231,7 +250,10 @@ def create_new_customer(
 
 @router.put(
     "/{customer_id}",
-    response_model=CustomerMutationResponse
+    response_model=CustomerMutationResponse,
+    dependencies=[
+        Depends(require_roles("ADMIN"))
+    ]
 )
 def update_existing_customer(
     request: CustomerUpdateRequest,
@@ -274,7 +296,10 @@ def update_existing_customer(
 
 @router.delete(
     "/{customer_id}",
-    response_model=CustomerDeleteResponse
+    response_model=CustomerDeleteResponse,
+    dependencies=[
+        Depends(require_roles("ADMIN"))
+    ]
 )
 def delete_existing_customer(
     customer_id: int = Path(..., ge=1)

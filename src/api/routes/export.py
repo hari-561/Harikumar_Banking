@@ -14,6 +14,8 @@ from fastapi.responses import StreamingResponse
 from src.api.services.export_service import (
     get_customers_for_export
 )
+from fastapi import Depends
+from src.api.security.rbac import require_roles
 
 
 router = APIRouter(
@@ -22,7 +24,12 @@ router = APIRouter(
 )
 
 
-@router.get("/customers")
+@router.get(
+    "/customers",
+    dependencies=[
+        Depends(require_roles("ADMIN", "ANALYST"))
+    ]
+)
 def export_customers(
 
     risk_band: Literal[

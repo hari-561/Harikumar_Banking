@@ -5,8 +5,18 @@ from src.frontend.api_client import (
     APIClientError,
     get_health,
 )
+from src.frontend.components.auth import logout_user
 
 from src.frontend.navigation import NAVIGATION
+
+PAGE_ROLES = {
+    "Overview": {"ADMIN", "ANALYST", "VIEWER"},
+    "Risk Analysis": {"ADMIN", "ANALYST", "VIEWER"},
+    "Portfolio Analytics": {"ADMIN", "ANALYST", "VIEWER"},
+    "Customer Explorer": {"ADMIN", "ANALYST", "VIEWER"},
+    "Customer Management": {"ADMIN"},
+    "Reports & Export": {"ADMIN", "ANALYST"},
+}
 
 def render_sidebar():
 
@@ -45,7 +55,21 @@ def render_sidebar():
         # 2. Sidebar navigation
         # -----------------------------------
 
-        page_names = list(NAVIGATION.keys())
+        role = st.session_state.get("role")
+
+        page_names = [
+            page
+            for page in NAVIGATION.keys()
+            if role in PAGE_ROLES.get(page, set())
+        ]
+
+        if not page_names:
+            st.error("Your account has no assigned dashboard access.")
+            st.stop()
+
+        if st.session_state.active_page not in page_names:
+            st.session_state.active_page = page_names[0]
+            st.session_state.pop("sidebar_navigation", None)
 
         selected_page = st.radio(
             "Navigation",
@@ -94,6 +118,24 @@ def render_sidebar():
             dedent(status_html).strip(),
             unsafe_allow_html=True
         )
+
+        st.divider()
+
+        st.caption(
+            f"Signed in as: {st.session_state.get('username', 'Unknown')}"
+        )
+
+        st.caption(
+            f"Role: {st.session_state.get('role', 'Unknown')}"
+        )
+
+        if st.button(
+            "Logout",
+            use_container_width=True,
+            key="logout_button",
+            type="primary"
+        ):
+            logout_user()
 
         # -----------------------------------
         # 4. Sidebar footer

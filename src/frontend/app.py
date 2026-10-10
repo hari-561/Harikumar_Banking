@@ -1,3 +1,5 @@
+
+
 import streamlit as st
 
 from src.frontend.styles import apply_global_styles
@@ -6,6 +8,7 @@ from src.frontend.components.shell import (
     render_sidebar,
     render_page_header,
     render_placeholder,
+    PAGE_ROLES,
 )
 from src.frontend.pages.portfolio_analytics import (
     render_portfolio_analytics,
@@ -33,6 +36,17 @@ from src.frontend.pages.overview import render_overview
 from src.frontend.pages.risk_analysis import (
     render_risk_analysis,
 )
+
+from src.frontend.components.auth import (
+    initialize_auth_session,
+    render_login,
+)
+
+from src.frontend.api_client import (
+    api_request,
+    APIClientError,
+)
+from src.frontend.components.auth import logout_user
 st.set_page_config(
     page_title="CreditRisk Intelligence",
     page_icon="🏦",
@@ -45,7 +59,48 @@ def main():
 
     apply_global_styles()
 
+    initialize_auth_session()
+
+    if not st.session_state.authenticated:
+        render_login()
+        return
+
+    try:
+        current_user = api_request(
+            method="GET",
+            endpoint="/auth/me",
+        )
+
+    except APIClientError as error:
+        if error.status_code in (401, 403):
+            st.warning(
+                "Your session has expired or is no longer valid. "
+                "Please log in again."
+            )
+            logout_user()
+
+        st.error(
+            "Unable to verify your session. "
+            f"{error}"
+        )
+        st.stop()
+
+    if (
+        current_user["user_id"] != st.session_state.user_id
+    ):
+        st.error("Authentication session mismatch.")
+        logout_user()
+
+    st.session_state.username = current_user["username"]
+    st.session_state.role = current_user["role"]
+
     selected_page = render_sidebar()
+
+    role = st.session_state.get("role")
+
+    if role not in PAGE_ROLES.get(selected_page, set()):
+        st.error("You are not authorized to access this page.")
+        st.stop()
 
     render_page_header(
         selected_page

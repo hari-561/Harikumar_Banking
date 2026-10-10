@@ -15,6 +15,9 @@ from src.api.services.analytics_service import (
     get_segment_analytics
 )
 
+from fastapi import Depends
+from src.api.security.rbac import require_roles
+
 
 router = APIRouter(
     prefix="/analytics",
@@ -24,7 +27,10 @@ router = APIRouter(
 
 @router.get(
     "/summary",
-    response_model=PortfolioSummaryResponse
+    response_model=PortfolioSummaryResponse,
+    dependencies=[
+        Depends(require_roles("ADMIN", "ANALYST", "VIEWER"))
+    ]
 )
 def portfolio_summary():
     return get_portfolio_summary()
@@ -32,7 +38,10 @@ def portfolio_summary():
 
 @router.get(
     "/risk-distribution",
-    response_model=List[RiskDistributionItem]
+    response_model=List[RiskDistributionItem],
+    dependencies=[
+        Depends(require_roles("ADMIN", "ANALYST", "VIEWER"))
+    ]
 )
 def risk_distribution():
     return get_risk_distribution()
@@ -40,7 +49,10 @@ def risk_distribution():
 
 @router.get(
     "/monthly-trends",
-    response_model=List[MonthlyTrendItem]
+    response_model=List[MonthlyTrendItem],
+    dependencies=[
+        Depends(require_roles("ADMIN", "ANALYST", "VIEWER"))
+    ]
 )
 def monthly_trends():
     return get_monthly_trends()
@@ -49,7 +61,10 @@ def monthly_trends():
 
 @router.get(
     "/segments",
-    response_model=List[SegmentAnalyticsItem]
+    response_model=List[SegmentAnalyticsItem],
+    dependencies=[
+        Depends(require_roles("ADMIN", "ANALYST", "VIEWER"))
+    ]
 )
 def segment_analytics(
     segment: Literal[
