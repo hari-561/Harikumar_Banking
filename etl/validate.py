@@ -1,5 +1,7 @@
 import pandas as pd
+from src.utils.logger import setup_logger
 
+logger = setup_logger("banking.etl.validation")
 
 REPAYMENT_COLUMNS = [
     "PAY_0",
@@ -56,6 +58,10 @@ def validate_data(df: pd.DataFrame) -> pd.DataFrame:
     """
 
     results = []
+    logger.info(
+    "Data validation started | rows=%s",
+    len(df)
+)
 
     # ---------------------------------------------------------
     # DQ01 - Missing values
@@ -250,8 +256,40 @@ def validate_data(df: pd.DataFrame) -> pd.DataFrame:
         "Default target must contain only 0 or 1.",
     )
 
-    return pd.DataFrame(results)
+    report = pd.DataFrame(results)
 
+    for _, result in report.iterrows():
+
+        status = result["status"]
+
+        message = (
+            "Data quality check | check=%s | status=%s | count=%s"
+        )
+
+        arguments = (
+            result["check"],
+            status,
+            result["count"]
+        )
+
+        if status == "FAIL":
+            logger.error(message, *arguments)
+
+        elif status == "WARNING":
+            logger.warning(message, *arguments)
+
+        else:
+            logger.info(message, *arguments)
+
+    logger.info(
+        "Data validation completed | total_checks=%s | passed=%s | warnings=%s | failed=%s",
+        len(report),
+        int((report["status"] == "PASS").sum()),
+        int((report["status"] == "WARNING").sum()),
+        int((report["status"] == "FAIL").sum())
+    )
+
+    return report
 
 def validation_passed(report: pd.DataFrame) -> bool:
     """

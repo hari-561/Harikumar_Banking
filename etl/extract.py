@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+from src.utils.logger import setup_logger
 
 
 REQUIRED_COLUMNS = [
@@ -31,6 +32,8 @@ REQUIRED_COLUMNS = [
     "default payment next month",
 ]
 
+logger = setup_logger("banking.etl.extract")
+
 
 def extract_data(file_path: str) -> pd.DataFrame:
     """
@@ -43,12 +46,25 @@ def extract_data(file_path: str) -> pd.DataFrame:
 
     path = Path(file_path)
 
+    logger.info(
+    "Extraction started | source_file=%s",
+    path.name
+)
+
     if not path.exists():
+        logger.error(
+    "Extraction failed | reason=file_not_found | source_file=%s",
+    path.name
+)
         raise FileNotFoundError(
             f"Input file not found: {file_path}"
         )
 
     if path.suffix.lower() not in {".xls", ".xlsx"}:
+        logger.error(
+    "Extraction failed | reason=unsupported_file_type | source_file=%s",
+    path.name
+)
         raise ValueError(
             "Unsupported file type. Expected .xls or .xlsx"
         )
@@ -60,11 +76,18 @@ def extract_data(file_path: str) -> pd.DataFrame:
         )
 
     except Exception as exc:
+        logger.error(
+    "Extraction failed | reason=excel_read_error | error_type=%s",
+    type(exc).__name__
+)
         raise RuntimeError(
             f"Failed to read Excel file: {exc}"
         ) from exc
 
     if df.empty:
+        logger.error(
+    "Extraction failed | reason=empty_dataset"
+)
         raise ValueError(
             "The input dataset contains no records."
         )
@@ -76,9 +99,19 @@ def extract_data(file_path: str) -> pd.DataFrame:
     ]
 
     if missing_columns:
+        logger.error(
+    "Extraction failed | reason=missing_required_columns | count=%s",
+    len(missing_columns)
+)
         raise ValueError(
             f"Required columns missing: {missing_columns}"
         )
+
+    logger.info(
+    "Extraction completed | rows=%s | columns=%s",
+    len(df),
+    len(df.columns)
+)
 
     return df
 

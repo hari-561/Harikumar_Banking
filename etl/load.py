@@ -2,6 +2,10 @@ import mysql.connector
 from mysql.connector import Error
 import pandas as pd
 
+from src.utils.logger import setup_logger
+
+logger = setup_logger("banking.etl.database")
+
 
 DB_CONFIG = {
     "host": "localhost",
@@ -23,9 +27,16 @@ def get_connection():
         connection = mysql.connector.connect(**DB_CONFIG)
 
         if connection.is_connected():
+
+            logger.info("ETL MySQL connection established")
             return connection
 
     except Error as exc:
+
+        logger.error(
+    "ETL MySQL connection failed | error_type=%s",
+    type(exc).__name__
+)
         raise ConnectionError(
             f"Unable to connect to MySQL: {exc}"
         ) from exc
@@ -57,7 +68,13 @@ def load_customers(cursor, customers: pd.DataFrame):
         customers.itertuples(index=False, name=None)
     )
 
+    
+
     cursor.executemany(sql, records)
+    logger.info(
+        "Customer records processed | count=%s",
+        len(records)
+    )
 
 
 def load_credit_profiles(cursor, credit_profiles: pd.DataFrame):
@@ -102,6 +119,11 @@ def load_credit_profiles(cursor, credit_profiles: pd.DataFrame):
     )
 
     cursor.executemany(sql, records)
+    logger.info(
+    "Credit profile records processed | count=%s",
+    len(records)
+)
+
 
 
 def load_monthly_activity(
@@ -146,11 +168,22 @@ def load_monthly_activity(
 
         cursor.executemany(sql, batch)
 
+        logger.info(
+    "Monthly activity batch processed | processed=%s | total=%s",
+    min(start + batch_size, len(records)),
+    len(records)
+)
+
         print(
             f"Monthly activity processed: "
             f"{min(start + batch_size, len(records))}"
             f"/{len(records)}"
         )
+
+    logger.info(
+    "Monthly activity loading completed | total=%s",
+    len(records)
+)
 
 
 def get_database_counts(cursor):
@@ -192,6 +225,13 @@ def load_database(
     try:
         connection = get_connection()
 
+        logger.info(
+    "Full database load started | customers=%s | profiles=%s | monthly=%s",
+    len(customers),
+    len(credit_profiles),
+    len(monthly_activity)
+)
+
         cursor = connection.cursor()
 
         print("\n========== MYSQL LOAD STARTED ==========")
@@ -223,6 +263,11 @@ def load_database(
         # Commit only after all three tables succeed
         connection.commit()
 
+        logger.error(
+    "Full database load failed | error_type=%s",
+    type(exc).__name__
+)
+
         print("\nTransaction committed successfully.")
 
         counts = get_database_counts(cursor)
@@ -237,7 +282,14 @@ def load_database(
     except Exception as exc:
 
         if connection is not None:
+
+            logger.error(
+    "Full database load failed | error_type=%s",
+    type(exc).__name__
+)
             connection.rollback()
+
+            logger.warning("Full database load transaction rolled back")
 
         print("\nTransaction rolled back.")
 
@@ -266,6 +318,7 @@ def load_risk_assessments(cursor, risk_df):
 
     if risk_df.empty:
         print("No risk assessments to load.")
+        logger.info("Risk assessment load skipped | reason=no_records")
         return
 
     sql = """
@@ -339,6 +392,11 @@ def load_risk_assessments(cursor, risk_df):
         sql,
         records
     )
+
+    logger.info(
+    "Risk assessments processed | count=%s",
+    len(records)
+)
 
     print(
         f"Risk assessments processed: {len(records)}"

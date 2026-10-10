@@ -1,6 +1,8 @@
 import pandas as pd
 from decimal import Decimal, ROUND_HALF_UP
+from src.utils.logger import setup_logger
 
+logger = setup_logger("banking.etl.transform")
 
 
 COLUMN_MAPPING = {
@@ -117,6 +119,12 @@ def transform_data(df: pd.DataFrame) -> pd.DataFrame:
     """
 
     transformed = df.copy()
+
+    logger.info(
+    "Transformation started | rows=%s | columns=%s",
+    len(df),
+    len(df.columns)
+)
 
     # ---------------------------------------------------------
     # 1. Rename source columns
@@ -237,6 +245,12 @@ def transform_data(df: pd.DataFrame) -> pd.DataFrame:
     transformed = transformed[
         first_columns + remaining_columns
     ]
+
+    logger.info(
+    "Transformation completed | rows=%s | columns=%s",
+    len(transformed),
+    len(transformed.columns)
+)
 
     return transformed
 

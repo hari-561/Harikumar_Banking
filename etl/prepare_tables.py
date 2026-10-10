@@ -1,5 +1,8 @@
 import pandas as pd
 
+from src.utils.logger import setup_logger
+
+logger = setup_logger("banking.etl.prepare")
 
 MONTH_MAPPING = [
     {
@@ -124,6 +127,35 @@ def prepare_database_tables(df: pd.DataFrame):
     credit_profiles = prepare_credit_profiles(df)
 
     monthly_activity = prepare_monthly_activity(df)
+
+    logger.info(
+    "Database tables prepared | customers=%s | credit_profiles=%s | monthly_activity=%s",
+    len(customers),
+    len(credit_profiles),
+    len(monthly_activity)
+)
+
+    expected_monthly = len(df) * 6
+
+    if (
+        len(customers) != len(df)
+        or len(credit_profiles) != len(df)
+        or len(monthly_activity) != expected_monthly
+    ):
+        logger.error(
+            "Table preparation reconciliation failed | source=%s | customers=%s | profiles=%s | monthly=%s | expected_monthly=%s",
+            len(df),
+            len(customers),
+            len(credit_profiles),
+            len(monthly_activity),
+            expected_monthly
+        )
+    else:
+        logger.info(
+            "Table preparation reconciliation passed | source=%s | monthly_expected=%s",
+            len(df),
+            expected_monthly
+        )
 
     return customers, credit_profiles, monthly_activity
 

@@ -1,6 +1,9 @@
 import pandas as pd
 
 from load import get_connection
+from src.utils.logger import setup_logger
+
+logger = setup_logger("banking.etl.change_detection")
 
 
 COMPARE_COLUMNS = [
@@ -62,6 +65,11 @@ def fetch_existing_customers() -> pd.DataFrame:
         cursor.execute(query)
 
         rows = cursor.fetchall()
+
+        logger.info(
+    "Existing customer state fetched | count=%s",
+    len(rows)
+)
 
         return pd.DataFrame(rows)
 
@@ -204,6 +212,14 @@ def detect_changes(
         incoming.loc[unchanged_ids]
         .reset_index(drop=True)
     )
+
+    logger.info(
+    "Incremental changes detected | incoming=%s | new=%s | changed=%s | unchanged=%s",
+    len(incoming),
+    len(new_records),
+    len(changed_records),
+    len(unchanged_records)
+)
 
     return (
         new_records,
@@ -396,7 +412,14 @@ if __name__ == "__main__":
         classified_count
     )
 
+    logger.info(
+    "Incremental reconciliation | incoming=%s | classified=%s",
+    len(transformed_data),
+    classified_count
+)
+
     if classified_count != len(transformed_data):
+        logger.error("Incremental classification reconciliation failed")
         raise RuntimeError(
             "Incremental classification reconciliation failed."
         )

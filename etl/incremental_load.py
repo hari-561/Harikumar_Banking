@@ -2,7 +2,8 @@ from datetime import datetime
 from multiprocessing.dummy import connection
 from multiprocessing.dummy import connection
 from pathlib import Path
-
+import time
+from src.utils.logger import setup_logger
 import pandas as pd
 
 from extract import extract_data
@@ -16,6 +17,9 @@ from load import (
     load_credit_profiles,
     load_monthly_activity,
 )
+
+
+logger = setup_logger("banking.etl.incremental")
 
 
 def create_audit_record(
@@ -123,13 +127,22 @@ def fail_audit_record(
 def run_incremental_pipeline(file_path):
 
     start_time = datetime.now()
+    start_clock = time.perf_counter()
+
+    logger.info(
+    "Incremental pipeline started | source_file=%s",
+    Path(file_path).name
+)
 
     # ========================================================
     # 1. EXTRACT
     # ========================================================
 
     raw_data = extract_data(file_path)
-
+    logger.info(
+    "Extraction completed | rows=%s",
+    len(raw_data)
+)
     # ========================================================
     # 2. VALIDATE
     # ========================================================
@@ -140,12 +153,18 @@ def run_incremental_pipeline(file_path):
         raise ValueError(
             "Source dataset failed validation."
         )
+    logger.info("Source validation passed")
+
 
     # ========================================================
     # 3. TRANSFORM
     # ========================================================
 
     transformed_data = transform_data(raw_data)
+    logger.info(
+    "Transformation completed | rows=%s",
+    len(transformed_data)
+)
 
     # ========================================================
     # 4. FETCH EXISTING DATABASE STATE
@@ -171,6 +190,14 @@ def run_incremental_pipeline(file_path):
     updated_count = len(changed_records)
     unchanged_count = len(unchanged_records)
 
+    logger.info(
+    "Incremental classification completed | source=%s | new=%s | updated=%s | unchanged=%s",
+    source_count,
+    new_count,
+    updated_count,
+    unchanged_count
+)
+
     # ========================================================
     # 6. RECONCILIATION
     # ========================================================
@@ -185,6 +212,8 @@ def run_incremental_pipeline(file_path):
         raise RuntimeError(
             "Incremental classification reconciliation failed."
         )
+
+    
 
     # ========================================================
 # BUILD FULL INCREMENTAL DATASET
@@ -215,9 +244,20 @@ def run_incremental_pipeline(file_path):
    
 
     if loaded_count != new_count + updated_count:
+        logger.error(
+        "Incremental load reconciliation failed | loaded=%s | expected=%s",
+        loaded_count,
+        new_count + updated_count
+    )
+
+
         raise RuntimeError(
             "Incremental load reconciliation failed."
         )
+    logger.info(
+    "Incremental reconciliation passed | records_to_load=%s",
+    loaded_count
+)
 
     print("\n========== INCREMENTAL SUMMARY ==========")
 
@@ -250,6 +290,10 @@ def run_incremental_pipeline(file_path):
         )
 
         print("\nETL batch ID:", batch_id)
+        logger.info(
+    "ETL batch created | batch_id=%s",
+    batch_id
+)
 
         # ----------------------------------------------------
         # Only prepare/load NEW + CHANGED records
@@ -287,6 +331,11 @@ def run_incremental_pipeline(file_path):
                     load_cursor.close()
         else:
 
+            logger.info(
+    "Database load skipped | batch_id=%s | reason=no_changes",
+    batch_id
+)
+
             print(
                 "\nNo new or changed records. "
                 "Database load skipped."
@@ -307,6 +356,13 @@ def run_incremental_pipeline(file_path):
 
         connection.commit()
 
+        logger.info(
+    "Incremental transaction committed | batch_id=%s | loaded=%s | duration_seconds=%.2f",
+    batch_id,
+    loaded_count,
+    time.perf_counter() - start_clock
+)
+
         print(
             "\nIncremental transaction "
             "committed successfully."
@@ -315,8 +371,20 @@ def run_incremental_pipeline(file_path):
         print("INCREMENTAL LOAD RESULT: PASS")
 
     except Exception as error:
+        logger.error(
+    "Incremental transaction failed | batch_id=%s | error_type=%s",
+    batch_id,
+    type(error).__name__
+)
 
         connection.rollback()
+
+        logger.warning(
+    "Incremental transaction rolled back | batch_id=%s",
+    batch_id
+)
+
+        
 
         print(
             "\nIncremental transaction "
