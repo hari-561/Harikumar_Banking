@@ -8,14 +8,13 @@ from src.frontend.api_client import (
     get_customer_segments,
 )
 
-
-@pytest.fixture(scope="module")
-def summary():
+@pytest.fixture
+def summary(authenticated_frontend):
     return get_portfolio_summary()
 
 
-@pytest.fixture(scope="module")
-def risk_data():
+@pytest.fixture
+def risk_data(authenticated_frontend):
     return get_risk_distribution()
 
 

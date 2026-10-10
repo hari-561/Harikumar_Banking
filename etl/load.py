@@ -263,10 +263,7 @@ def load_database(
         # Commit only after all three tables succeed
         connection.commit()
 
-        logger.error(
-    "Full database load failed | error_type=%s",
-    type(exc).__name__
-)
+        logger.info("Full database load transaction committed")
 
         print("\nTransaction committed successfully.")
 

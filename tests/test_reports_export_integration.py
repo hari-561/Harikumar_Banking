@@ -26,9 +26,41 @@ SEGMENTS = [
 ]
 
 
+import os
+
+
 @pytest.fixture(scope="module")
 def session():
+    username = os.getenv("TEST_API_USERNAME")
+    password = os.getenv("TEST_API_PASSWORD")
+
+    if not username or not password:
+        pytest.fail(
+            "Set TEST_API_USERNAME and TEST_API_PASSWORD "
+            "before running integration tests."
+        )
+
     with requests.Session() as client:
+        login_response = client.post(
+            f"{BASE_URL}/auth/login",
+            json={
+                "username": username,
+                "password": password,
+            },
+            timeout=30,
+        )
+
+        assert login_response.status_code == 200, (
+            "Integration test login failed: "
+            f"HTTP {login_response.status_code}"
+        )
+
+        token = login_response.json()["access_token"]
+
+        client.headers.update({
+            "Authorization": f"Bearer {token}"
+        })
+
         yield client
 
 
