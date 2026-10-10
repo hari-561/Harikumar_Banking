@@ -393,3 +393,4 @@ def test_chart_disables_plotly_modebar(ui, comparison):
     assert ui["plot"].call_args.kwargs["config"] == {
         "displayModeBar": False
     }
+
