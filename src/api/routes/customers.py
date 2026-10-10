@@ -1,5 +1,5 @@
 from typing import Literal
-
+from src.utils.logger import setup_logger
 from fastapi import APIRouter, Query, HTTPException
 from fastapi import Path
 from src.api.schemas import CustomerListResponse
@@ -48,6 +48,7 @@ router = APIRouter(
     prefix="/customers",
     tags=["Customers"]
 )
+logger = setup_logger("banking.customer")
 
 
 
@@ -232,6 +233,11 @@ def create_new_customer(
             detail="Customer already exists"
         )
 
+    logger.info(
+    "Customer created | customer_id=%s | outcome=success",
+    result["customer_id"]
+)
+
     return {
         "message":
             "Customer created successfully",
@@ -278,6 +284,11 @@ def update_existing_customer(
             detail="Customer not found"
         )
 
+    logger.info(
+    "Customer updated | customer_id=%s | outcome=success",
+    result["customer_id"]
+)
+
     return {
         "message":
             "Customer updated successfully",
@@ -314,6 +325,11 @@ def delete_existing_customer(
             status_code=404,
             detail="Customer not found"
         )
+
+    logger.info(
+    "Customer deleted | customer_id=%s | outcome=success",
+    result["customer_id"]
+)
 
     return {
         "message":

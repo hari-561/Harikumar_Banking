@@ -11,6 +11,8 @@ from src.api.routes.analytics import (
 from src.api.routes.export import (
     router as export_router
 )
+
+from src.api.middleware.request_logging import log_api_requests
 app = FastAPI(
     title="Banking Loan Risk Analysis API",
     description=(
@@ -18,10 +20,11 @@ app = FastAPI(
         "repayment behaviour, risk assessments, "
         "and portfolio analytics."
     ),
-    version="1.0.0"
+    version="1.0.0",
+    
 )
 
-
+app.middleware("http")(log_api_requests)
 app.include_router(health_router)
 app.include_router(health_router)
 app.include_router(customers_router)

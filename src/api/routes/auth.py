@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException, status
-
+from src.utils.logger import setup_logger
 from src.api.security.auth_schemas import (
     LoginRequest,
     LoginResponse
 )
+from src.utils.logger import setup_logger
 
 from src.api.security.jwt_handler import (
     create_access_token,
@@ -25,8 +26,17 @@ router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
 )
+logger = setup_logger("banking.auth")
 
 
+@router.post(
+    "/login",
+    response_model=LoginResponse
+)
+@router.post(
+    "/login",
+    response_model=LoginResponse
+)
 @router.post(
     "/login",
     response_model=LoginResponse
@@ -39,6 +49,11 @@ def login(request: LoginRequest):
     )
 
     if user is None:
+
+        logger.warning(
+            "Login failed | reason=invalid_credentials_or_inactive_account"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
@@ -51,6 +66,12 @@ def login(request: LoginRequest):
         user_id=user["user_id"],
         username=user["username"],
         role=user["role"]
+    )
+
+    logger.info(
+        "Login successful | user_id=%s | role=%s",
+        user["user_id"],
+        user["role"]
     )
 
     return {

@@ -1,14 +1,14 @@
 from fastapi import Depends, HTTPException, status
 
 from src.api.security.dependencies import get_current_user
-
+from src.utils.logger import setup_logger
 
 VALID_ROLES = frozenset({
     "ADMIN",
     "ANALYST",
     "VIEWER"
 })
-
+logger = setup_logger("banking.security")
 
 def require_roles(*allowed_roles: str):
     """
@@ -33,6 +33,13 @@ def require_roles(*allowed_roles: str):
     ) -> dict:
 
         if current_user["role"] not in allowed_roles:
+
+            logger.warning(
+        "Access denied | user_id=%s | role=%s | required_roles=%s",
+        current_user["user_id"],
+        current_user["role"],
+        ",".join(allowed_roles)
+    )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to perform this action."

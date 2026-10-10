@@ -1,6 +1,10 @@
 from decimal import Decimal, ROUND_HALF_UP
+from os import error
 
 import pandas as pd
+from src.utils.logger import setup_logger
+
+logger = setup_logger("banking.database")
 
 from src.api.database import get_db_connection
 from rules.risk_rules import calculate_customer_risk
@@ -349,6 +353,10 @@ def create_customer(request):
         }
 
     except Exception:
+        logger.error(
+        "Customer create transaction failed | error_type=%s",
+        type(error).__name__,
+    )
         if connection:
             connection.rollback()
 
@@ -594,6 +602,12 @@ def update_customer(
 
     except Exception:
 
+   
+        logger.error(
+        "Customer update transaction failed | error_type=%s",
+            type(error).__name__,
+    )
+
         if connection:
             connection.rollback()
 
@@ -682,6 +696,11 @@ def delete_customer(customer_id):
         }
 
     except Exception:
+
+        logger.error(
+        "Customer delete transaction failed | error_type=%s",
+        type(error).__name__,
+    )
 
         if connection:
             connection.rollback()

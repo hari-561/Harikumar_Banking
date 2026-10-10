@@ -3,7 +3,9 @@ import os
 import mysql.connector
 from dotenv import load_dotenv
 from mysql.connector import Error
+from src.utils.logger import setup_logger
 
+logger = setup_logger("banking.database")
 
 load_dotenv()
 
@@ -30,6 +32,12 @@ def get_db_connection():
         return connection
 
     except Error as error:
+        logger.error(
+            "Database connection failed | error_type=%s | mysql_errno=%s",
+            type(error).__name__,
+            getattr(error, "errno", None),
+        )
+
         raise RuntimeError(
-            f"Database connection failed: {error}"
+            "Database connection failed"
         ) from error
