@@ -29,14 +29,7 @@ router = APIRouter(
 logger = setup_logger("banking.auth")
 
 
-@router.post(
-    "/login",
-    response_model=LoginResponse
-)
-@router.post(
-    "/login",
-    response_model=LoginResponse
-)
+
 @router.post(
     "/login",
     response_model=LoginResponse

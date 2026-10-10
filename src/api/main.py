@@ -26,7 +26,6 @@ app = FastAPI(
 
 app.middleware("http")(log_api_requests)
 app.include_router(health_router)
-app.include_router(health_router)
 app.include_router(customers_router)
 app.include_router(analytics_router)
 app.include_router(export_router)
